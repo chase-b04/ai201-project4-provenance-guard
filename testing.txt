@@ -13,3 +13,186 @@ returns:
   "label": "Pending full scoring pipeline.",
   "signal_a_score": 0.2
 }
+
+------------------------------------------------------------------------------------------------------------------------------
+Milestone 5:
+
+1. Verify all 3 label tiers are reachable
+
+Input:
+REM likely_human — casual ramen review
+curl -s -X POST http://localhost:5000/submit -H "Content-Type: application/json" -d "{\"text\": \"ok so i finally tried that new ramen place downtown and honestly? underwhelming. the broth was fine but they put WAY too much sodium in it. my friend got the spicy version and said it was better. probably won't go back unless someone drags me there.\", \"creator_id\": \"demo-user-1\"}"
+
+Output:
+{
+  "appeal_filed": false,
+  "attribution": "likely_human",
+  "confidence": 0.2207,
+  "content_id": "c1fac069-ada2-445a-9ca9-ae02c39cb3b6",
+  "creator_id": "demo-user-1",
+  "disagreement": 0.0414,
+  "label_text": "This content shows strong indicators of human authorship. Our system is highly confident in this assessment.",
+  "llm_score": 0.2,
+  "status": "classified",
+  "stylometric_score": 0.2414,
+  "timestamp": "2026-07-01T04:03:41.020100Z"
+}
+
+Input:
+REM uncertain — formal human writing
+curl -s -X POST http://localhost:5000/submit -H "Content-Type: application/json" -d "{\"text\": \"The relationship between monetary policy and asset price inflation has been extensively studied in the literature. Central banks face a fundamental tension between their mandate for price stability and the unintended consequences of prolonged low interest rates on equity and real estate valuations.\", \"creator_id\": \"demo-user-2\"}"
+
+Output:
+{
+  "appeal_filed": false,
+  "attribution": "uncertain",
+  "confidence": 0.5772,
+  "content_id": "3218c884-f1a3-40ce-afd9-34b6ce872169",
+  "creator_id": "demo-user-2",
+  "disagreement": 0.3662,
+  "label_text": "This content shows some patterns associated with AI-generated text and patterns associated with human authorship. Our confidence is limited, and thus we cannot give a strong answer. The creator can request a review of this classification.",
+  "llm_score": 0.8,
+  "status": "classified",
+  "stylometric_score": 0.4338,
+  "timestamp": "2026-07-01T04:04:38.799684Z"
+}
+
+Input:
+REM likely_ai — transition-heavy essay
+curl -s -X POST http://localhost:5000/submit -H "Content-Type: application/json" -d "{\"text\": \"It is important to note that digital transformation represents a fundamental paradigm shift across industries. Furthermore, stakeholders must collaborate to ensure responsible deployment of emerging technologies. Additionally, organizations that fail to adapt will consequently face significant competitive disadvantages. Moreover, it should be noted that strategic investment in infrastructure remains essential.\", \"creator_id\": \"demo-user-3\"}"
+
+Output:
+{
+  "appeal_filed": false,
+  "attribution": "likely_ai",
+  "confidence": 0.8033,
+  "content_id": "f9cff552-9168-4331-b0ac-9e166c2b0669",
+  "creator_id": "demo-user-3",
+  "disagreement": 0.0065,
+  "label_text": "This content shows strong indicators of AI generation. Our system is highly confident in this assessment.",
+  "llm_score": 0.8,
+  "status": "classified",
+  "stylometric_score": 0.8065,
+  "timestamp": "2026-07-01T04:05:17.449845Z"
+}
+
+------------------------------------------------------------------------------------------------------------------------------
+2. Test the appeal flow end-to-end
+curl -s -X POST http://localhost:5000/appeal -H "Content-Type: application/json" -d "{\"content_id\": \"PASTE-ID-HERE\", \"creator_reasoning\": \"I wrote this myself. The informal tone and specific details reflect my personal experience.\"}"
+
+Output for content_id: f9cff552-9168-4331-b0ac-9e166c2b0669 (demo-user-3)
+Input: curl -s -X POST http://localhost:5000/appeal -H "Content-Type: application/json" -d "{\"content_id\": \"f9cff552-9168-4331-b0ac-9e166c2b0669\", \"creator_reasoning\": \"I wrote this myself. The informal tone and specific details reflect my personal experience.\"}"
+Output: 
+{
+  "content_id": "f9cff552-9168-4331-b0ac-9e166c2b0669",
+  "message": "Appeal received. A human reviewer will evaluate your submission.",
+  "status": "under_review"
+}
+
+------------------------------------------------------------------------------------------------------------------------------
+3. Confirm the audit log has ≥3 structured entries
+Input:
+curl -s http://localhost:5000/log
+
+output:
+{
+  "entries": [
+    {
+      "attribution": "likely_human",
+      "confidence": null,
+      "content_id": "e5c57097-65b1-4fd6-ae1d-00aed675cddd",
+      "creator_id": "test-user-1",
+      "label": "Pending full scoring pipeline.",
+      "signal_a": 0.2,
+      "signal_b": null,
+      "status": "reviewed",
+      "timestamp": "2026-06-30T23:44:17.616464Z",
+      "type": "submission"
+    },
+    {
+      "appeal_filed": false,
+      "attribution": "likely_human",
+      "confidence": 0.2207,
+      "content_id": "c1fac069-ada2-445a-9ca9-ae02c39cb3b6",
+      "creator_id": "demo-user-1",
+      "disagreement": 0.0414,
+      "label_text": "This content shows strong indicators of human authorship. Our system is highly confident in this assessment.",
+      "llm_score": 0.2,
+      "status": "classified",
+      "stylometric_score": 0.2414,
+      "timestamp": "2026-07-01T04:03:41.020100Z",
+      "type": "submission"
+    },
+    {
+      "appeal_filed": false,
+      "attribution": "uncertain",
+      "confidence": 0.5772,
+      "content_id": "3218c884-f1a3-40ce-afd9-34b6ce872169",
+      "creator_id": "demo-user-2",
+      "disagreement": 0.3662,
+      "label_text": "This content shows some patterns associated with AI-generated text and patterns associated with human authorship. Our confidence is limited, and thus we cannot give a strong answer. The creator can request a review of this classification.",
+      "llm_score": 0.8,
+      "status": "classified",
+      "stylometric_score": 0.4338,
+      "timestamp": "2026-07-01T04:04:38.799684Z",
+      "type": "submission"
+    },
+    {
+      "appeal_filed": false,
+      "attribution": "likely_ai",
+      "confidence": 0.8033,
+      "content_id": "f9cff552-9168-4331-b0ac-9e166c2b0669",
+      "creator_id": "demo-user-3",
+      "disagreement": 0.0065,
+      "label_text": "This content shows strong indicators of AI generation. Our system is highly confident in this assessment.",
+      "llm_score": 0.8,
+      "status": "classified",
+      "stylometric_score": 0.8065,
+      "timestamp": "2026-07-01T04:05:17.449845Z",
+      "type": "submission"
+    }
+  ]
+}
+
+------------------------------------------------------------------------------------------------------------------------------
+4. Demonstrate rate limiting
+Input:
+for i in $(seq 1 12); do
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:5000/submit \
+    -H "Content-Type: application/json" \
+    -d '{"text": "This is a rate limit test submission that contains enough words to pass the minimum word count requirement for the preprocessor validation check.", "creator_id": "ratelimit-test"}'
+done
+
+Output:
+200
+200
+200
+200
+200
+200
+200
+200
+429
+429
+429
+429
+
+------------------------------------------------------------------------------------------------------------------------------
+5. Test the 400 error cases
+Input: 
+REM missing creator_id
+curl -s -X POST http://localhost:5000/submit -H "Content-Type: application/json" -d "{\"text\": \"some text\"}"
+
+Output:
+{
+  "error": "Request body must include 'text' and 'creator_id' fields."
+}
+
+Input:
+REM bad content_id on appeal
+curl -s -X POST http://localhost:5000/appeal -H "Content-Type: application/json" -d "{\"content_id\": \"does-not-exist\", \"creator_reasoning\": \"test\"}"
+
+Output:
+{
+  "error": "No submission found with content_id 'does-not-exist'."
+}
