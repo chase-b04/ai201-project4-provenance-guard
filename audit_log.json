@@ -1,0 +1,14 @@
+[
+  {
+    "type": "submission",
+    "content_id": "e5c57097-65b1-4fd6-ae1d-00aed675cddd",
+    "creator_id": "test-user-1",
+    "timestamp": "2026-06-30T23:44:17.616464Z",
+    "signal_a": 0.2,
+    "signal_b": null,
+    "confidence": null,
+    "attribution": "likely_human",
+    "label": "Pending full scoring pipeline.",
+    "status": "reviewed"
+  }
+]

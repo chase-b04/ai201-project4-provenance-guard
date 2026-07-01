@@ -1,0 +1,15 @@
+Milestone 3 testing:
+
+curl -s -X POST http://localhost:5000/submit \
+  -H "Content-Type: application/json" \
+  -d '{"text": "The sun dipped below the horizon, painting the sky in hues of amber and rose. I sat on the porch, coffee in hand, watching the neighborhood slowly go quiet.", "creator_id": "test-user-1"}' | python -m json.tool
+
+returns:
+{
+  "attribution": "likely_human",
+  "confidence": null,
+  "content_id": "e5c57097-65b1-4fd6-ae1d-00aed675cddd",
+  "creator_id": "test-user-1",
+  "label": "Pending full scoring pipeline.",
+  "signal_a_score": 0.2
+}
